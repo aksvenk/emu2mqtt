@@ -83,6 +83,8 @@ def main():
     last_price = 0
     last_reading = 0
 
+    lwt_counter = 0
+
     mqttc.loop_start()
     logging.info("Connecting to MQTT broker " + args.mqtt_server + ":" + str(args.mqtt_port) + " as " + args.mqtt_client_name)
 
@@ -94,29 +96,20 @@ def main():
                 mqttc.loop_stop()
                 sys.exit()
 
-        logging.debug("Sleeping for 10 seconds")
-        time.sleep(10)
+        logging.debug("Sleeping for a second")
+        time.sleep(1)
         logging.debug("Checking for serial messages")
 
+        # Publish lwt (last will and testament) every 60 seconds
         if mqttc.connected_flag:
-            lwt_msg = mqttc.publish(args.mqtt_topic + "/lwt", "online", int(args.mqtt_qos), True)
-            lwt_msg.wait_for_publish()
+            logging.debug("lwt counter: %d" % lwt_counter)
+            lwt_counter = 0 if lwt_counter >= 60 else lwt_counter
 
-        try:
-            price_cluster = emuc.PriceCluster
-            timestamp = get_timestamp(price_cluster)
-            if timestamp > last_price:
-                message = {
-                    "topic": args.mqtt_topic + "/price",
-                    "value": get_price(price_cluster),
-                    "timestamp": timestamp
-                }
-                publish_message(mqttc, message)
-                last_price = timestamp
-        except AttributeError:
-            pass
-        except TypeError:
-            pass
+            if lwt_counter == 0:
+                lwt_msg = mqttc.publish(args.mqtt_topic + "/lwt", "online", int(args.mqtt_qos), True)
+                lwt_msg.wait_for_publish()
+            
+            lwt_counter += 1
 
         try:
             instantaneous_demand = emuc.InstantaneousDemand
