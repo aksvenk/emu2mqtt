@@ -75,9 +75,6 @@ def main():
 
     emuc.start_serial()
     logging.info("Connected to EMU serial")
-    emuc.get_instantaneous_demand('Y')
-    emuc.get_current_summation_delivered()
-    emuc.get_price_blocks()
 
     last_demand = 0
     last_price = 0
