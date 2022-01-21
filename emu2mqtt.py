@@ -135,13 +135,17 @@ def main():
             pass
 
         try:
-            current_summation_delivered = emuc.CurrentSummationDelivered
-            timestamp = get_timestamp(current_summation_delivered)
+            current_summation = emuc.CurrentSummationDelivered
+            timestamp = get_timestamp(current_summation)
             if timestamp > last_reading:
+                imports = get_reading(current_summation.SummationDelivered,
+                                         current_summation)
+                exports = get_reading(current_summation.SummationReceived,
+                                         current_summation)
+                value_json = '{ "import": %.3f , "export": %.3f }' % (imports, exports)
                 message = {
                     "topic": args.mqtt_topic + "/reading",
-                    "value": get_reading(current_summation_delivered.SummationDelivered,
-                                         current_summation_delivered),
+                    "value": value_json,
                     "timestamp": timestamp
                 }
                 publish_message(mqttc, message)
